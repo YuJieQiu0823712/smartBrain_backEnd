@@ -1,4 +1,6 @@
 const express = require('express')
+const bcrypt = require('bcryptjs')
+const cors = require('cors')
 
 const app = express()
 
@@ -6,6 +8,7 @@ const app = express()
 // app.use(express.urlencoded({extended: false}))
 // // extended: false means it uses the Node.js built-in querystring module to parse the data, which only supports simple key-value pairs.
 app.use(express.json()) //body parser middleware to parse JSON data in the request body
+app.use(cors())
 
 const database = {
     users: [
@@ -30,6 +33,7 @@ const database = {
 }
 
 
+
 app.get('/', (req,res) => {
     // console.log(req.query)
     // console.log(req.body)
@@ -43,6 +47,12 @@ app.get('/', (req,res) => {
 
 app.post('/signin', (req,res) => {
     // res.json('signing')
+    // bcrypt.compare('apples', '$2b$10$T91v8OQ1AJcRKYV3QzUVoOc0WB5Q5qgUd9S/2xJ.zuI11pPxiU.N.', (err, res) => {
+    //     console.log('first', res)   
+    // });
+    // bcrypt.compare('veggies', '$2b$10$T91v8OQ1AJcRKYV3QzUVoOc0WB5Q5qgUd9S/2xJ.zuI11pPxiU.N.', (err, res) => {
+    //     console.log('second', res)   
+    // });
     if (req.body.email === database.users[0].email &&
         req.body.password === database.users[0].password) {
             res.json('success')
@@ -53,11 +63,14 @@ app.post('/signin', (req,res) => {
 
 app.post('/register', (req,res) => {
     const { email, name, password } = req.body
+    // bcrypt.hash(password, 10, (err, hash) => {
+    //     console.log(hash)   
+    // });
     database.users.push({
         id: '125',
         name: name,
         email: email,
-        password: password,
+        // password: password,
         entries: 0,
         joined: new Date()
     })
