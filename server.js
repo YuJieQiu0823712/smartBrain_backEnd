@@ -58,7 +58,7 @@ app.post('/signin', (req,res) => {
             res.json('success')
     } else {
         res.status(400).json('error logging in')
-    }
+    } 
 })
 
 app.post('/register', (req,res) => {
