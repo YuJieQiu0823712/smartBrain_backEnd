@@ -30,27 +30,27 @@ const app = express()
 app.use(express.json()) //body parser middleware to parse JSON data in the request body
 app.use(cors())
 
-const database = {
-    users: [
-        {
-            id: '123',
-            name: 'John',
-            email: 'john@gmail.com',
-            password: 'cookies',
-            entries: 0,
-            joined: new Date()
-        },
-        {
-            id: '124',
-            name: 'Sally',
-            email: 'sally@gmail.com',
-            password: 'bananas',
-            entries: 0,
-            joined: new Date()
-        }
+// const database = {
+//     users: [
+//         {
+//             id: '123',
+//             name: 'John',
+//             email: 'john@gmail.com',
+//             password: 'cookies',
+//             entries: 0,
+//             joined: new Date()
+//         },
+//         {
+//             id: '124',
+//             name: 'Sally',
+//             email: 'sally@gmail.com',
+//             password: 'bananas',
+//             entries: 0,
+//             joined: new Date()
+//         }
 
-    ]
-}
+//     ]
+// }
 
 
 
@@ -61,8 +61,10 @@ app.get('/', (req,res) => {
     // console.log(req.params)
     // console.log(req.method)
     // res.send('this is working')
-    res.send(database.users)
+    // res.send(database.users)
     // res.status(404).send('not found')
+        // It sends a response back to the client (like Postman or the browser)
+       res.send('success') 
 })
 
 app.post('/signin', (req,res) => {
@@ -74,19 +76,37 @@ app.post('/signin', (req,res) => {
     //     console.log('second', res)   
     // });
 
-    if (req.body.email === database.users[0].email &&
-        req.body.password === database.users[0].password) {
-            // res.json('success')
-            res.json(database.users[0])
-        } else {
-            res.status(400).json('error logging in')
-        } 
+    // if (req.body.email === database.users[0].email &&
+    //     req.body.password === database.users[0].password) {
+    //         // res.json('success')
+    //         res.json(database.users[0])
+    //     } else {
+    //         res.status(400).json('error logging in')
+    //     } 
 
+    
+    db.select('email','hash').from('login')
+    .where('email','=',req.body.email)
+    .then(data => {
+        const isValid = bcrypt.compareSync(req.body.password, data[0].hash)
+        if(isValid) {
+            return db.select('*').from('users')
+            .where('email','=',req.body.email)
+            .then(user => {
+                res.json(user[0])
+            })
+            .catch(err => res.status(400).json('unable to get users'))
+        } else {
+            res.status(400).json('wrong credentials')
+        }
+    })
+    .catch(err => res.status(400).json('wrong credentials'))
+})
 
     
 
 
-})
+
 
 app.post('/register', (req,res) => {
     const { email, name, password } = req.body
@@ -104,15 +124,40 @@ app.post('/register', (req,res) => {
     // })
     // res.json(database.users[database.users.length-1])
 
-    db('users')
-    .returning('*')
-    .insert({
-        email: email,
-        name: name,
-        joined: new Date()
-    }).then(response => {
-        res.json(response);
+    const hash = bcrypt.hashSync(password)
+    db.transaction(trx => {
+        trx.insert({
+            hash: hash,
+            email: email
+        })
+        .into('login')
+        .returning('email')
+        .then(loginEmail => {
+            return trx('users')
+            .returning('*')
+            .insert({
+                email: loginEmail[0].email,
+                name: name,
+                joined: new Date()
+            })
+            .then(user => {
+                res.json(user[0])
+            })
+        })
+        .then(trx.commit)
+        .catch(trx.rollback)
     })
+
+    // db('users')
+    // .returning('*')
+    // .insert({
+    //     email: email,
+    //     name: name,
+    //     joined: new Date()
+    // }).then(response => {
+    //     res.json(response);
+    // })
+
     .catch(err => res.status(404).json('unable to register'))
         // res is the response object from Express
         // .json() sends the err back to the client in JSON format
@@ -121,8 +166,8 @@ app.post('/register', (req,res) => {
 })
 
 app.get('/profile/:id', (req,res) => {
-    const {id} = req.params
-    let found = false
+    const { id } = req.params
+    // let found = false
     
     // database.users.forEach(user => {
     //     if (user.id === id) {
@@ -131,14 +176,19 @@ app.get('/profile/:id', (req,res) => {
     //     } 
     // }) 
 
+
     // db.select('*').from('users').where({
     //     id: id
     // }) //equal
     db.select('*').from('users').where({id})
     .then(user => {
-        // console.log(user[0])
-        res.json(user[0])
+        if(user.length) {
+            res.json(user[0])
+        } else {
+            res.status(400).json('Not found')
+        }
     })
+    .catch(err => res.status(400).json('error getting user'))
     // if (!found) {
     //     res.status(404).json('no such user')
     // }
@@ -147,17 +197,26 @@ app.get('/profile/:id', (req,res) => {
 
 app.put('/image', (req,res) => {
     const { id } = req.body
-    let found = false
-    database.users.forEach(user => {
-        if (user.id === id) {
-            found = true
-            user.entries++
-            return res.json(user.entries)
-        }
+    // let found = false
+    // database.users.forEach(user => {
+    //     if (user.id === id) {
+    //         found = true
+    //         user.entries++
+    //         return res.json(user.entries)
+    //     }
+    // })
+
+    db('users').where('id', '=', id)
+    .increment('entries', 1)
+    .returning('entries')
+    .then(entries => {
+        res.json(entries[0].entries)
     })
-    if (!found) {
-        res.status(404).json('not found')
-    }
+    .catch(err => res.status(400).json('unable to get entries'))
+    
+    // if (!found) {
+    //     res.status(404).json('not found')
+    // }
 })
 
 
