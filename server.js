@@ -11,26 +11,24 @@ const image = require('./controllers/image')
 
 const db = knex ({
     client: 'pg',
-    connection: {
-        host: 'postgresql://mydb_5f25_user:5wz1ughUI19hQVuuNoMc7QvZXu3XvLR8@dpg-d07lueqdbo4c73eh0280-a/mydb_5f25',
-        user: 'mydb_5f25_user',
-        password: '5wz1ughUI19hQVuuNoMc7QvZXu3XvLR8',
-        database: 'mydb_5f25',
-    },
+    connection: process.env.DATABASE_URL
+    // connection: {
+        // host: 'postgresql://mydb_5f25_user:5wz1ughUI19hQVuuNoMc7QvZXu3XvLR8@dpg-d07lueqdbo4c73eh0280-a/mydb_5f25',
+        // user: 'mydb_5f25_user',
+        // password: '5wz1ughUI19hQVuuNoMc7QvZXu3XvLR8',
+        // database: 'mydb_5f25',
+    // },
 });
 
-// db.select('*').from('users').then(data => {
-//     console.log(data)
-// }) 
-    // Starts an asynchronous operation (it talks to the database).
-    // It doesn't immediately give you the data — instead, it returns a Promise.
-    // use .then(...) to handle the result when the Promise is fulfilled.
 
 
 const app = express()
 app.use(express.json()) //body parser middleware to parse JSON data in the request body
 app.use(cors({
-    origin: 'https://smartbrain-frontend-qmrt.onrender.com'
+    origin: 'https://smartbrain-frontend-qmrt.onrender.com',
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true
 })) 
 
 // Cross-Origin Resource Sharing =>
