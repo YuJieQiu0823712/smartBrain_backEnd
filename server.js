@@ -29,7 +29,10 @@ const db = knex ({
 
 const app = express()
 app.use(express.json()) //body parser middleware to parse JSON data in the request body
-app.use(cors()) 
+app.use(cors({
+    origin: 'https://smartbrain-frontend-qmrt.onrender.com'
+})) 
+
 // Cross-Origin Resource Sharing =>
 // Telling your server: "Allow requests from different origins (different domains, ports, or protocols)
 
