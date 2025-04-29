@@ -37,7 +37,7 @@ const handleApiCall = (req, res) => {
           {
             "data": {
                 "image": {
-                    "url": IMAGE_URL, // Get the image URL from the request body
+                    "url": IMAGE_URL // Get the image URL from the request body
                     // "base64": IMAGE_BYTES_STRING
                 }
             }
